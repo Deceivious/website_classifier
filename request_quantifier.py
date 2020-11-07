@@ -11,17 +11,10 @@ def get_status_code(url):
         url = "http://" + url
     try:
         response = requests.get(url, headers={"User-Agent": "XY"})
-    except ConnectionError:
-        return False, None
     except Exception as err:
-        print(type(err))
-        raise
+        return Exception(f"Exception:{str(err)}")
     res_code = str(response.status_code)
-    if len(res_code) == 3:
-        if res_code.startswith("2") or res_code.startswith("3"):
-            return True, res_code
-
-    return False, None
+    return res_code
 
 
 def check_robots(url):
