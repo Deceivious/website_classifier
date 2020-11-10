@@ -4,7 +4,7 @@ from time import sleep
 from urllib.parse import urlparse
 from env import chrome_path
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, JavascriptException
 
 
 class SeleniumScore:
@@ -129,7 +129,7 @@ class SeleniumScore:
     def load_selenium(self):
         chrome_options = Options()
         chrome_options.add_argument("--headless")
-        self.driver = Chrome(chrome_path, options=chrome_options)
+        self.driver = Chrome(executable_path=chrome_path, options=chrome_options)
         self.driver.get(self.url)
         self.source = self.driver.page_source
 
@@ -174,10 +174,21 @@ class SeleniumScore:
 
     def start(self):
         self.load_selenium()
-        while True:
-            try:
-                return self.extract_date()
-            except StaleElementReferenceException:
-                continue
-            except:
-                raise
+        try:
+            try_count = 1
+            while True:
+                try:
+                    return self.extract_date()
+                except StaleElementReferenceException:
+                    try_count += 1
+                    if try_count == 10:
+                        raise {"selenium_error": str(err)}
+                    continue
+                except JavascriptException as err:
+                    return {"selenium_error": str(err)}
+                except:
+                    raise
+        except:
+            raise
+        finally:
+            self.driver.close()
