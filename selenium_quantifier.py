@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from env import chrome_path
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException, JavascriptException
+from langdetect import detect
 
 
 class SeleniumScore:
@@ -158,6 +159,7 @@ class SeleniumScore:
         iframe_count = self.get_element_count("iframe")
         table_count = self.get_element_count("table")
         form_count = self.get_element_count("form")
+        has_flagged_keywords = self.has_flagged_keyword()
 
         image_count, logo_count, thumbnail_count = self.check_images()
 
@@ -168,9 +170,50 @@ class SeleniumScore:
         meta_og = self.get_meta("og:")
         meta_twitter = self.get_meta("twitter:")
         meta_facebook = self.get_meta("fb:")
+
+        language = self.get_language()
         data = locals()
         del data["self"]
         return data
+
+    def get_language(self):
+        results = self.driver.find_elements_by_xpath("//*")
+        results = [r.text for r in results]
+        max_count = max([len(i) for i in results])
+        results = [r for r in results if len(r) == max_count][0]
+        return detect(results)
+
+    def has_flagged_keyword(self):
+        keywords = """hello world
+under construction
+forbidden
+Index of /
+The service is unavailable
+Site under maintenance
+My WordPress Blog
+bluehost.com
+hostinger
+coming Soon
+internal server error
+account suspended
+page not found
+error Pag
+Buy this domain
+is for sale
+hola mundo
+sitio en construcción
+página en construcción
+página temporal
+modo de mantenimiento
+sitio en mantenimeinto
+página en mantenimeinto
+dominio Reservado
+próximamente"""
+        keywords = keywords.lower().split("\n")
+        for keyword in keywords:
+            if keyword in self.source.lower():
+                return True
+        return False
 
     def start(self):
         self.load_selenium()

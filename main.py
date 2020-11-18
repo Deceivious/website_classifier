@@ -32,13 +32,14 @@ def get_score(url):
     return score
 
 
-def start(input_path, url_header):
+def start(input_path, url_header, offset=0):
     if input_path.endswith("tsv"):
-        url_list = list(pd.read_csv(input_path, sep="\t")[url_header].unique())
+        url_list = pd.read_csv(input_path, sep="\t")[url_header]
     if input_path.endswith("tsv"):
-        url_list = list(pd.read_csv(input_path)[url_header].unique())
+        url_list = pd.read_csv(input_path)[url_header]
     if input_path.endswith("xlsx"):
-        url_list = list(pd.read_excel(input_path)[url_header].unique())
+        url_list = pd.read_excel(input_path)[url_header]
+    url_list = list(url_list)
     output_path = r"D:\a.tsv"
     if os.path.exists(output_path):
         df = pd.read_csv(output_path, sep="\t")
@@ -49,6 +50,8 @@ def start(input_path, url_header):
     ll = len(url_list)
     success_count = 0
     for idx, i in enumerate(url_list):
+        if idx < offset:
+            continue
         if i in df["URL"].values:
             print(idx, idx / ll * 100, i, "completed")
             continue
@@ -63,10 +66,11 @@ def start(input_path, url_header):
             if success_count == 10:
                 success_count = 0
                 df = pd.concat([df, pd.DataFrame(score)])
+                df = df.drop_duplicates(["URL"])
                 df.to_csv(output_path, index=False, sep="\t")
-                score = []ire
+                score = []
     pd.concat([df, pd.DataFrame(score)]).to_csv(output_path, index=False, sep="\t")
 
 
 if __name__ == "__main__":
-    start(r"D:\2019-Cleaned_Database.xlsx", "domain_name")
+    start(r"D:\2019-Cleaned_Database.xlsx", "domain_name", 10_000)
